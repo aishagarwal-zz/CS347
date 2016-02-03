@@ -1,0 +1,31 @@
+     begin 
+    t0 := 5 
+	_i := t0 
+    t0 := 0 
+	_j := t0 
+     COND 
+    t0 := _i 
+    t1 := 2 
+     t0 >= t1 
+     while ( t0 ) 
+     do 
+    beginWhile 
+     begin 
+    t1 := _i 
+    t2 := 4 
+     t1 <= t2 
+     if ( t1 ) 
+     then 
+  beginIf 
+    t2 := _j 
+    t3 := _i 
+     t2 += t3 
+	_j := t2 
+     endIf 
+    t1 := _i 
+    t2 := 1 
+     t1 -= t2 
+	_i := t1 
+    end 
+     endWhile 
+    end 

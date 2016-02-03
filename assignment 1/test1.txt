@@ -1,0 +1,12 @@
+begin
+i := 5;
+j := 0;
+while (i>2)
+do
+begin
+if( i < 4)
+then
+j := j+i;
+i := i-1;
+end
+end

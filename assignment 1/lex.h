@@ -19,6 +19,7 @@
 #define END         18 /* end */
 #define ID            19 /* identifier */
 
+
 extern char *yytext;        /* in lex.c         */
 extern int yyleng;
 extern yylineno;

@@ -28,7 +28,7 @@ statements()
                 advance();
                 tempvar=expression();
                 //print the assignment
-                printf("    %0.*s := %s \n", yyleng_temp, yytext_temp,tempvar );
+                printf("	_%0.*s := %s \n", yyleng_temp, yytext_temp,tempvar );
                 if( match(SEMI) )
                     advance();
                 else
@@ -48,16 +48,16 @@ statements()
     else if( match( IF ) )
     {
         advance();
-        printf("    COND \n");
+        
         tempvar=expression();
-        printf("    if ( %s ) \n", tempvar);
+        printf("     if ( %s ) \n", tempvar);
         if( match( THEN ) )
         {
-            printf("    then \n  begin \n");
+            printf("     then \n  beginIf \n");
             advance();
             if( !match(EOI) )
                 statements();
-            printf("    end \n");
+            printf("     endIf \n");
         }
         else
             fprintf( stderr, "%d: then missing\n", yylineno );
@@ -68,16 +68,17 @@ statements()
     else if( match(WHILE) )
     {
         advance();
-        printf("    COND \n");
+        printf("     COND \n");
         tempvar=expression();
-        printf("    while ( %s ) \n", tempvar);
+        printf("     while ( %s ) \n", tempvar);
         if( match( DO ) )
         {
-            printf("    do \n    begin \n");
+            printf("     do \n    beginWhile \n");
             advance();
             if( !match(EOI) )
                 statements();
-            printf("    end \n");
+            // fprintf(stdout, "yolo\n");
+            printf("     endWhile \n");
         }
         else
             fprintf( stderr, "%d: DO missing\n", yylineno );
@@ -86,7 +87,7 @@ statements()
     
     else if( match(BEGIN) )
     {
-        printf("    begin\n");
+        printf("     begin \n");
         advance();
         if( !match(EOI) )
             opt_stmts();
@@ -100,8 +101,10 @@ statements()
     }
     
     else
+    {
         fprintf( stderr, "%d: syntax error id or if or while or begin expected \n", yylineno );
-
+        advance();
+    }
     
 }
 
@@ -137,18 +140,37 @@ char    *expression()
     tempvar = term();
     while(match(PLUS) || match(MINUS) || match(LT) || match(GT) || match(COMP))
     {
-        advance();
-        tempvar2 = term();
+        
         if( match( PLUS ))
-            printf("    %s += %s \n", tempvar, tempvar2 );
+        {
+            advance();
+            tempvar2 = term();    
+            printf("     %s += %s \n", tempvar, tempvar2 );
+        }
         if( match( MINUS ) )
-            printf("    %s -= %s \n", tempvar, tempvar2 );
+        {
+            advance();
+            tempvar2 = term();
+            printf("     %s -= %s \n", tempvar, tempvar2 );
+        }
         if( match( LT ) )
-            printf("    %s <= %s \n", tempvar, tempvar2 );
+        {
+            advance();
+            tempvar2 = term();
+            printf("     %s <= %s \n", tempvar, tempvar2 );
+        }
         if( match( GT ) )
-            printf("    %s >= %s \n", tempvar, tempvar2 );
+        {
+            advance();
+            tempvar2 = term();
+            printf("     %s >= %s \n", tempvar, tempvar2 );
+        }
         if( match( COMP ) )
-            printf("    %s = %s \n", tempvar, tempvar2 );
+        {
+            advance();
+            tempvar2 = term();
+            printf("     %s == %s \n", tempvar, tempvar2 );
+        }
         freename( tempvar2 );
     }
     return tempvar;
@@ -165,14 +187,14 @@ char    *term()
         {
             advance();
             tempvar2 = factor();
-            printf("    %s *= %s \n", tempvar, tempvar2 );
+            printf("     %s *= %s \n", tempvar, tempvar2 );
             freename( tempvar2 );
         }
         else
         {
              advance();
             tempvar2 = factor();
-            printf("    %s /= %s \n", tempvar, tempvar2 );
+            printf("     %s /= %s \n", tempvar, tempvar2 );
             freename( tempvar2 );
         }
         
@@ -186,7 +208,7 @@ char    *factor()
 {
     char *tempvar;
 
-    if( match(NUM) || match(ID) )
+    if( match(NUM))
     {
     /* Print the assignment instruction. The %0.*s conversion is a form of
      * %X.Ys, where X is the field width and Y is the maximum number of
@@ -196,8 +218,14 @@ char    *factor()
      * to print the string. The ".*" tells printf() to take the maximum-
      * number-of-characters count from the next argument (yyleng).
      */
+     
 
-        printf("    %s = %0.*s \n", tempvar = newname(), yyleng, yytext );
+        printf("    %s := %0.*s \n", tempvar = newname(), yyleng, yytext );
+        advance();
+    }
+    else if( match(ID) )
+    {
+        printf("    %s := _%0.*s \n", tempvar = newname(), yyleng, yytext );
         advance();
     }
     else if( match(LP) )

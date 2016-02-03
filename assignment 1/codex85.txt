@@ -1,0 +1,147 @@
+  ;     begin 
+
+  ;    t0 := 5 
+
+MVI A, 05H
+
+STA 02B0H
+  ;	_i := t0 
+
+LXI H, 02B0H
+MOV A, M
+STA 02C0H
+  ;    t0 := 0 
+
+MVI A, 00H
+
+STA 02B0H
+  ;	_j := t0 
+
+LXI H, 02B0H
+MOV A, M
+STA 02C1H
+  ;     COND 
+
+  ;    t0 := _i 
+
+LXI H, 02C0H
+MOV A, M
+STA 02B0H
+  ;    t1 := 2 
+
+MVI A, 02H
+
+STA 02B1H
+  ;     t0 >= t1 
+
+LXI H, 02B1H
+MOV B, M
+LXI H, 02B0H
+MOV A, M
+SUB B
+MVI A, 00H
+JM 0037H
+JZ 0037H
+MVI A, 01H
+STA 02B0H
+  ;     while ( t0 ) 
+
+LXI H, 02B0H
+MOV A, M
+ADI 00H
+JZ 00B1H
+  ;     do 
+
+  ;    beginWhile 
+
+  ;     begin 
+
+  ;    t1 := _i 
+
+LXI H, 02C0H
+MOV A, M
+STA 02B1H
+  ;    t2 := 4 
+
+MVI A, 04H
+
+STA 02B2H
+  ;     t1 <= t2 
+
+LXI H, 02B2H
+MOV B, M
+LXI H, 02B1H
+MOV A, M
+SUB B
+MVI A, 00H
+JP 0062H
+JZ 0062H
+MVI A, 01H
+STA 02B1H
+  ;     if ( t1 ) 
+
+LXI H, 02B1H
+MOV A, M
+ADI 00H
+JZ 008FH
+  ;     then 
+
+  ;  beginIf 
+
+  ;    t2 := _j 
+
+LXI H, 02C1H
+MOV A, M
+STA 02B2H
+  ;    t3 := _i 
+
+LXI H, 02C0H
+MOV A, M
+STA 02B3H
+  ;     t2 += t3 
+
+LXI H, 02B3H
+MOV B, M
+LXI H, 02B2H
+MOV A, M
+ADD B
+STA 02B2H
+  ;	_j := t2 
+
+LXI H, 02B2H
+MOV A, M
+STA 02C1H
+  ;     endIf 
+
+  ;    t1 := _i 
+
+LXI H, 02C0H
+MOV A, M
+STA 02B1H
+  ;    t2 := 1 
+
+MVI A, 01H
+
+STA 02B2H
+  ;     t1 -= t2 
+
+LXI H, 02B2H
+MOV B, M
+LXI H, 02B1H
+MOV A, M
+SUB B
+STA 02B1H
+  ;	_i := t1 
+
+LXI H, 02B1H
+MOV A, M
+STA 02C0H
+  ;    end 
+
+  ;     endWhile 
+
+JMP 0018H
+
+  ;    end 
+
+HLT
