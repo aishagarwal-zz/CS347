@@ -1,0 +1,10 @@
+begin
+i := 5+6/7-4;
+j := 2==2;
+while (i<7)
+do
+while(i>4)
+do
+j := j+2;
+i := i+1;
+end
