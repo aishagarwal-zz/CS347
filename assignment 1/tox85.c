@@ -51,16 +51,16 @@ void if1(int i)
     fprintf(fout, "ADI 00H\n");
     fprintf(fout,"JZ xxxxH\n");             //3byte
     if_stck[if_stck_top++]=ftell(fout)-6;
-    printf("offset: %d\n", if_stck[if_stck_top-1]);
+    //printf("offset: %d\n", if_stck[if_stck_top-1]);
     line_no+=9;
 }
 
 void endif1()
 {
-    printf("%d\n", ftell(fout));
-    printf("offset: %d\n", if_stck[if_stck_top-1]);
+   // printf("%d\n", ftell(fout));
+    //printf("offset: %d\n", if_stck[if_stck_top-1]);
     fseek(fout,if_stck[--if_stck_top],SEEK_SET);
-    printf("%d\n", ftell(fout));
+    //printf("%d\n", ftell(fout));
     hex_print(line_no, 4);
     fseek(fout,0,SEEK_END);
 }
