@@ -16,6 +16,7 @@
 
 int line_no;    //smallest empty memory location
 FILE *fout;
+//stacks for if and while to handle the nested cases
 int if_stck[20],if_stck_top=0,while_stck[20],while_stck_top=0,cond_stck[20],cond_stck_top=0;
 
 char symbol_table[10][10];        //at max 10 varioables, each of length at max 10
@@ -23,6 +24,8 @@ char symbol_table[10][10];        //at max 10 varioables, each of length at max 
                                   //range: 02C0H to 02C9H
 int table_size=0;                   //no of variables declared uptill now
 
+
+//convert num to hex with 'bits' number of bits
 void hex_print(int num, int bits)
 {
     int rem,i;
@@ -43,6 +46,7 @@ void hex_print(int num, int bits)
     fprintf(fout,"H\n");
 }
 
+//store a blank address at the beginning of if
 void if1(int i)
 {
     //if ( ti )
@@ -55,6 +59,8 @@ void if1(int i)
     line_no+=9;
 }
 
+
+//seek to previous if to add the jump address
 void endif1()
 {
    // printf("%d\n", ftell(fout));
@@ -65,12 +71,15 @@ void endif1()
     fseek(fout,0,SEEK_END);
 }
 
+//store the address of the while condition in the stack
 void while_cond()
 {
     cond_stck[cond_stck_top++]=line_no;
     
 }
 
+
+//add a blank address at the beginning of the while
 void while1(int i)
 {
     //while(ti)
@@ -82,6 +91,8 @@ void while1(int i)
     line_no+=9;
 }
 
+
+//jump to the while condition
 void while_end()
 {
     fprintf(fout,"JMP ");             //3byte
@@ -253,6 +264,8 @@ void assign2(int i, int j)
     line_no+=8;
 }
 
+
+// ti := num
 void assign3(int i, int num)
 {
     fprintf(fout,"MVI A, ");                //2byte
@@ -293,29 +306,35 @@ int assign4(int i, char *sub)
     return 1;
 }
 
+
+//checks the operator/keyword in each line and calls the corresponding functions
 int check(char *line)
 {
     int i, j;
     if(strstr(line, " if ")!=NULL)
     {
         i = *(strstr(line, " if ") + 7) - '0';
+        //call if1 and pass the temp variable in its condition
         if1(i);
         return IF;
     }
     else if(strstr(line, " while ")!=NULL)
     {
         i = *(strstr(line, " while ") + 10) - '0';
+        //call if1 and pass the temp variable in its condition
         while1(i);
         return WHILE;
     }
     else if(strstr(line, " endWhile ")!=NULL)
     {
-        
+        //we need to jump to start of while
         while_end();
+        // return non-zero value to depict no error
         return 100;
     }
     else if(strstr(line, " beginWhile ")!=NULL)
     {
+        // return non-zero value to depict no error
         return 100;
     }
     else if(strstr(line, " beginIf ")!=NULL)
@@ -324,6 +343,7 @@ int check(char *line)
     }
     else if(strstr(line, " endIf ")!=NULL)
     {
+        //endif1 adds the jump address to the start of if
         endif1();
         return 100;         //just some non-zero value
     }
@@ -332,6 +352,7 @@ int check(char *line)
         while_cond();
         return 100;         //just some non-zero value
     }
+    //ignore the rest
     else if(strstr(line, " then ")!=NULL)
         return THEN;
     else if(strstr(line, " do ")!=NULL)
@@ -351,6 +372,7 @@ int check(char *line)
     }
     else if(strstr(line, " -= ")!=NULL)
     {
+        //ti -= tj
         i = *(strstr(line, " -= ") - 1) - '0';
         j = *(strstr(line, " -= ") + 5) - '0';
         minus(i, j);
@@ -358,6 +380,7 @@ int check(char *line)
     }
     else if(strstr(line, " *= ")!=NULL)
     {
+        //ti *= tj
         i = *(strstr(line, " *= ") - 1) - '0';
         j = *(strstr(line, " *= ") + 5) - '0';
         times(i, j);
@@ -365,6 +388,7 @@ int check(char *line)
     }
     else if(strstr(line, " /= ")!=NULL)
     {
+        //ti /= tj
         i = *(strstr(line, " /= ") - 1) - '0';
         j = *(strstr(line, " /= ") + 5) - '0';
         divi(i, j);
@@ -372,6 +396,7 @@ int check(char *line)
     }
     else if(strstr(line, " <= ")!=NULL)
     {
+        // ti = ti < tj
         i = *(strstr(line, " <= ") - 1) - '0';
         j = *(strstr(line, " <= ") + 5) - '0';
         lt(i, j);
@@ -379,6 +404,7 @@ int check(char *line)
     }
     else if(strstr(line, " >= ")!=NULL)
     {
+        // ti = ti > tj
         i = *(strstr(line, " >= ") - 1) - '0';
         j = *(strstr(line, " >= ") + 5) - '0';
         gt(i, j);
@@ -386,6 +412,7 @@ int check(char *line)
     }
     else if(strstr(line, " == ")!=NULL)
     {
+        //ti = ti == tj
         i = *(strstr(line, " == ") - 1) - '0';
         j = *(strstr(line, " == ") + 5) - '0';
         comp(i, j);
@@ -403,6 +430,7 @@ int check(char *line)
     
         if(line[1] == '_')
         {
+            //id := ti
             j = *(strstr(line, " := ") + 5) - '0';
             char sub[20];
             
@@ -456,6 +484,7 @@ int check(char *line)
 int main(int argc, char* argv[])
 {
     line_no=0;
+    //get the input filename
     if(argc <= 1)
     {
         fprintf(stderr, "filename not provided\n");
@@ -471,13 +500,10 @@ int main(int argc, char* argv[])
     {
         
         fprintf(fout, "  ;%s\n", line);
-        // printf("%s\n", line);
+        
         int key = check(line);
-        // if(key==PLUS || key==COMP || key==ASSIGN || key==LT || key==GT || key==MINUS || key==TIMES || key==DIV)
-        // {
-            
-        // }
-        //printf("%s", line);
+        
+        //show error if none of the expected criterion is matched
         if (key == EOI)
         {
             printf("error in: %s\n", line);
