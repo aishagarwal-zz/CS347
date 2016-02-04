@@ -102,6 +102,7 @@ statements()
     
     else
     {
+        //show error and skip the current lexeme
         fprintf( stderr, "%d: syntax error id or if or while or begin expected \n", yylineno );
         advance();
     }
