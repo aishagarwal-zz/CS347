@@ -1,93 +1,41 @@
-  ;     begin 
+  ;    t0 := 2 
 
-  ;    t0 := 5 
-
-MVI A, 05H
+MVI A, 02H
 
 STA 02B0H
-  ;	_i := t0 
+  ;    t1 := 3 
 
-LXI H, 02B0H
-MOV A, M
-STA 02C0H
-  ;    t0 := _i 
-
-LXI H, 02C0H
-MOV A, M
-STA 02B0H
-  ;    t1 := 1 
-
-MVI A, 01H
+MVI A, 03H
 
 STA 02B1H
-  ;     t0 >= t1 
-
-LXI H, 02B1H
-MOV B, M
-LXI H, 02B0H
-MOV A, M
-SUB B
-MVI A, 00H
-JM 002BH
-JZ 002BH
-MVI A, 01H
-STA 02B0H
-  ;     if ( t0 ) 
-
-LXI H, 02B0H
-MOV A, M
-ADI 00H
-JZ 006EH
-  ;     then 
-
-  ;  beginIf 
-
-  ;    t1 := _i 
-
-LXI H, 02C0H
-MOV A, M
-STA 02B1H
-  ;    t2 := 6 
-
-MVI A, 06H
-
-STA 02B2H
-  ;     t1 <= t2 
-
-LXI H, 02B2H
-MOV B, M
-LXI H, 02B1H
-MOV A, M
-SUB B
-MVI A, 00H
-JP 0056H
-JZ 0056H
-MVI A, 01H
-STA 02B1H
-  ;     if ( t1 ) 
-
-LXI H, 02B1H
-MOV A, M
-ADI 00H
-JZ 006EH
-  ;     then 
-
-  ;  beginIf 
-
   ;    t2 := 4 
 
 MVI A, 04H
 
 STA 02B2H
-  ;	_i := t2 
+  ;     t1 += t2 
 
 LXI H, 02B2H
+MOV B, M
+LXI H, 02B1H
+MOV A, M
+ADD B
+STA 02B1H
+  ;     t0 <= t1 
+
+LXI H, 02B1H
+MOV B, M
+LXI H, 02B0H
+MOV A, M
+SUB B
+MVI A, 00H
+JP 002EH
+JZ 002EH
+MVI A, 01H
+STA 02B0H
+  ;	_a := t0 
+
+LXI H, 02B0H
 MOV A, M
 STA 02C0H
-  ;     endIf 
-
-  ;     endIf 
-
-  ;    end 
-
 HLT

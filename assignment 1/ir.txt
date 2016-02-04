@@ -1,20 +1,12 @@
-     begin 
-    t0 := 5 
-	_i := t0 
-    t0 := _i 
-    t1 := 1 
+    t0 := 8 
+    t1 := 5 
+     t0 *= t1 
+    t1 := 6 
+     t0 += t1 
+    t1 := 2 
      t0 >= t1 
-     if ( t0 ) 
-     then 
-  beginIf 
-    t1 := _i 
-    t2 := 6 
-     t1 <= t2 
-     if ( t1 ) 
-     then 
-  beginIf 
-    t2 := 4 
-	_i := t2 
-     endIf 
-     endIf 
-    end 
+    t2 := 5 
+    t3 := 9 
+     t2 /= t3 
+     t0 == t2 
+	_a := t0 
