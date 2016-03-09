@@ -1,0 +1,1548 @@
+/*
+1. FOR SUBSET CONSTRUCTION MAX NO. OF DFA STATES IS 100 CAN CHANGE BY dfa_size 
+    OR IMPLIMENT MALLOC REALLOC ..
+
+
+
+
+*/
+
+#include<stdbool.h>
+#include<stdlib.h>
+#include<stdio.h>
+#include<string.h>
+
+///////////function declaration//////////////////
+void read_nfa();
+bool* epsilon_closure(bool *);
+/////////////////////////////////////////////////
+
+/////////////////////////////// GLOBAL VARIABLES FOR NFA//////////
+int n_states,init_state;
+int n_alphabet;
+char alphabet[50][15];
+bool ***transition;
+bool *fstates_set;
+//////////////////////////////////////////////////////////
+
+////////////////////////////// GLOBAL VARS FOR DFA/////////
+#define dfa_size 100
+int st[dfa_size], top=-1, st_size=dfa_size;
+
+int n_dstates=0;
+bool *dstates[dfa_size];
+int *dtransition[dfa_size] = {NULL};
+
+//////////////////////////////////////////////////////
+
+/////// STACK st ////
+void st_push( int val)
+{
+    if(top >= st_size - 1)
+        printf("Error: stack overflow\n");
+    else
+        st[++top] = val;
+}
+
+int st_pop()
+{
+    if(top == -1)
+    {
+        printf("Stack: underflow\n");
+        return -1;
+    }
+    return st[top--];
+}
+
+bool st_empty()
+{
+    if(top == -1)
+        return true;
+    return false;
+}
+////////////////////
+
+//return true if state has transition on that symbol
+bool is_transition(int state, int symbol)
+{
+    if(transition[state][symbol] == NULL)
+        return false;
+    return true;
+}
+
+// Gives integer mapping of alphabet or a symbol
+int alpha_to_int(char *alpha)
+{
+    int i;
+    for(i=0;i<n_alphabet;i++)
+    {
+        if(strcmp(alpha, alphabet[i]) == 0)
+            break;
+    }
+    if(i==n_alphabet)
+        return -1;
+    return i;
+}
+
+// return bit vector of states (subset of states) on reading symbol on state.
+bool* move(bool *state_set, int symbol)
+{
+    bool *final_state_set = (bool *)malloc(n_states*sizeof(bool));
+    memset( final_state_set, 0, n_states*sizeof(bool) );
+    bool *temp_state_set;
+    
+    int i,j;
+    for(i=0;i<n_states;i++)
+    {
+        
+        if(state_set[i] == true && is_transition(i,symbol))
+        {
+            temp_state_set = transition[i][symbol];
+            for(j=0;j<n_states;j++)
+            {
+                final_state_set[j] |= temp_state_set[j];
+            }
+        }
+        
+    }
+    return final_state_set;
+}
+
+// check if state is present in dstates
+int present( bool * state)
+{
+    int i,j;
+    for(i=0;i<n_dstates;i++)
+    {
+        for(j=0;j<n_states;j++)
+        {
+            if(dstates[i][j] != state[j] )
+                break;
+        }
+        if(j == n_states)
+            return i;
+    }
+    return -1;
+}
+
+/* If after move and epsilon closure no state is found then in bool vector all 0's.
+    then In DFA there will be a special state error where all 0's and on all symbol transition to itself.
+*/
+void subset_construction()
+{
+    int temp_dstate,i,j,k;
+    
+    bool init[n_states];
+    memset(init, 0, n_states*sizeof(bool));
+    bool *temp, *temp2;
+    init[init_state] = true;
+    temp = epsilon_closure(init);   // NOTE: temp is pointing to heap memory.
+    dstates[n_dstates++] = temp;              // No need to malloc as it's done in epsilon closure.
+    st_push(0);
+
+    while( !st_empty() )
+    {
+        temp_dstate = st_pop();
+        // n_alphabet -1 => last is epsilon we dont want that
+        for(i=0;i<n_alphabet-1; i++)
+        {
+            temp = move( dstates[temp_dstate] , i);
+            temp2 = epsilon_closure( temp );
+            
+            // printf("\nmove %d %d ", temp_dstate, i);
+            // for(j=0;j<n_states;j++)
+            //     printf("%d ",temp[j]);
+            free(temp);
+            j=present(temp2);
+            if( j == -1 )
+            {
+                dstates[n_dstates++] = temp2;
+                
+                if(dtransition[temp_dstate] == NULL)
+                {
+                    dtransition[temp_dstate] = (int *) malloc( (n_alphabet-1)*sizeof(int) );
+                    for(j=0;j<n_alphabet-1;j++)
+                        dtransition[temp_dstate][j] = -1;
+                }
+                dtransition[temp_dstate][i] = n_dstates-1;      // [dfa_state][symbol] => new dfa state 
+                //printf("\n dtransition  is %d %s %d  ", temp_dstate, alphabet[i], n_dstates-1);
+                st_push(n_dstates -1);
+            }
+            else
+            {
+                if(dtransition[temp_dstate] == NULL)
+                {
+                    dtransition[temp_dstate] = (int *) malloc( (n_alphabet-1)*sizeof(int) );
+                    for(k=0;k<n_alphabet-1;k++)
+                        dtransition[temp_dstate][k] = -1;
+                }
+                dtransition[temp_dstate][i] = j;
+                //printf("\n dtransition  is %d %s %d ", temp_dstate, alphabet[i], j);
+                
+            }
+            
+        }
+        
+    }
+    
+}
+
+#include"epsilon_closure.c"
+#include"read_nfa.c"
+
+int main()
+{
+    int i,j;
+    read_nfa();
+    subset_construction();
+    
+    printf("subset_construction completed\n");
+    
+    printf("dfa states\n");
+    for(i=0;i<n_dstates;i++)
+    {
+        for(j=0;j<n_states;j++)
+            printf("%d ",dstates[i][j]);
+        printf("\n");
+    }
+    printf("dfa transition\n");
+    for(i=0;i<n_dstates;i++)
+        for(j=0;j<n_alphabet-1;j++)
+            printf(" %d %s %d\n",i,alphabet[j],  dtransition[i][j]);
+    
+    FILE *fp = fopen("dfa.txt","w");
+    fprintf(fp,"n_states %d\n",n_dstates);
+    fprintf(fp,"initial_state 0\n");
+    
+    fprintf(fp, "n_symbol %d\n", n_alphabet-1 );
+    fprintf(fp,"final_state_set { ");
+    for(i=0;i<n_dstates;i++)
+    {
+        for(j=0;j<n_states;j++)
+        {
+            if(fstates_set[j] == true && dstates[i][j] == true)
+            {
+                fprintf(fp,"%d ",i);
+                break;
+            }
+        }
+    }
+    fprintf(fp,"}\n");
+    
+    ////////// alphabets
+    fprintf(fp,"alphabets { ");
+    
+    fprintf(fp,"%s ",alphabet[0]);
+    for(i=1;i<n_alphabet-1;i++)
+    fprintf(fp,", %s ",alphabet[i]);
+    fprintf(fp, "}\n");
+    ///// transition
+    fprintf(fp,"transition\n");
+    for(i=0;i<n_dstates;i++)
+    {
+        if( dtransition[i] == NULL)
+            continue;
+        for(j=0;j<n_alphabet-1;j++)
+        {
+            if(dtransition[i][j] != -1)
+            {
+                fprintf(fp, "{ %d , %s ( %d ) }\n", i, alphabet[j], dtransition[i][j]);
+            }
+        }
+    }
+    
+    /* test case
+    bool *ans,test_state[3]={0};
+    test_state[1]=1;
+    
+    int i,sym = 0;
+    ans=move(test_state,sym);
+    ans=epsilon_closure(ans);
+    printf("\n\n move test\n");
+    for(i=0;i<3;i++)
+        printf("%d ",ans[i]);
+    */
+    
+    
+    // free heap memory
+    free(fstates_set);
+    free(transition);
+    fclose(fp);
+    return 0;
+}
+
+///////////////////////////////////////////////////////
+
+
+
+void read_nfa()
+{
+    FILE *inp = fopen("epsilon_nfa.txt", "r");
+    char word[50], c;
+    int temp,temp2,i,j;
+    fscanf(inp, "%s %d", word, &n_states);
+    fscanf(inp, "%s %d", word, &init_state);
+    
+    fstates_set = (bool *) malloc(n_states*sizeof(bool));
+    memset(fstates_set,0,n_states*sizeof(bool));
+    
+    // read set of final states
+    fscanf(inp, "%s %s %d", word, word, &temp);
+    fstates_set[temp] = true;
+    while(1 )
+    {
+        c= fgetc(inp);
+        if(c == '}')
+            break;
+        if(c == ',')
+        {
+            fscanf(inp,"%d",&temp);
+            fstates_set[temp] = true;
+        }
+    }
+    
+    // read alphabets
+    n_alphabet = 0;
+    fscanf(inp,"%s %s",word,word);
+    fscanf(inp,"%s",alphabet[n_alphabet++]);
+    while(1)
+    {
+        c= fgetc(inp);
+        if(c == '}')
+            break;
+        if(c == ',')
+            fscanf(inp,"%s",alphabet[n_alphabet++]);
+    }
+    
+    // read transition
+    transition = (bool ***) malloc( n_states * sizeof(bool **) );
+    for( i=0; i<n_states; i++ )
+        transition[i] = (bool **) malloc( n_alphabet * sizeof(bool *) );
+    for(i=0;i<n_states;i++)
+        for(j=0;j<n_alphabet;j++)
+            transition[i][j] = NULL;
+    
+    fscanf(inp, "%s",word);     // read transition
+    while(fscanf(inp, "%s",word) != EOF)   // while we get '{'
+    {
+        fscanf(inp, "%d ,", &temp);  // state
+        fscanf(inp, "%s", word);    // symbol
+        int symbol = alpha_to_int(word);
+        
+        transition[temp][symbol] = (bool *) malloc( n_states* sizeof(bool) );
+        
+        fscanf(inp, "%s", word);    // read '('
+        fscanf(inp, "%d", &temp2);   // first final state
+        transition[temp][symbol][temp2] = true;
+        
+        while(1)
+        {
+            c= fgetc(inp);
+            if(c == ')')
+                break;
+            if(c == ',')
+            {
+                fscanf(inp, "%d", &temp2);
+                transition[temp][symbol][temp2] = true;
+            }
+        }
+        fscanf(inp, "%s",word);     // read '}'
+        
+    }
+    
+    printf("\nn_states%d init_state %d\n",n_states,init_state);
+    printf("final states \n");
+    for(i=0;i<n_states;i++)
+        printf("%d ",fstates_set[i]);
+    printf("alphabets\n");
+    for(i=0;i<n_alphabet;i++)
+        printf("%s\n", alphabet[i]);
+    printf("transitions\n");
+    for(i=0;i<n_states;i++)
+    {
+        for(j=0;j<n_alphabet;j++)
+        {
+            printf("state: %d symbol: %s -> ",i,alphabet[j]);
+            if(transition[i][j] == NULL)
+                printf("NULL");
+            else
+            {
+                for(temp=0;temp<n_states;temp++)
+                    printf("%d ",transition[i][j][temp]);
+            }
+            printf("\n");
+        }
+    }
+    fclose(inp);
+}
+
+
+//////////////////////////////////////////////////////////////
+
+
+
+bool* epsilon_closure(bool *state_set)
+{
+    bool *final_state_set = (bool *)malloc(n_states*sizeof(bool));
+    // if(newstates[i] ==true) then i is the new state.
+    int i,n_newstates=0,temp_new_state;
+    bool newstates[n_states];
+    bool *temp_state_set;
+    
+    for(i=0;i<n_states;i++)
+    {
+        final_state_set[i] = state_set[i];
+        newstates[i] = false;
+        if(final_state_set[i])
+        {
+            newstates[i] = true;
+            n_newstates++;
+        }
+    }
+    while ( n_newstates )
+    {
+        for( i=0; i<n_states; i++ )
+        {
+            if ( newstates[i] == true )
+            {
+                temp_new_state = i;
+                newstates[i] = false;
+                n_newstates--;
+                break;
+            }
+        }
+        if ( is_transition (temp_new_state , alpha_to_int("epsilon") ) )
+        {
+            temp_state_set = transition[temp_new_state][alpha_to_int("epsilon")];
+            for(i=0;i<n_states;i++)
+            {
+                if(temp_state_set[i] && !final_state_set[i])
+                {
+                    final_state_set[i] = true;
+                    newstates[i] = true;
+                    n_newstates++;
+                }
+            }
+        }
+    }
+    
+    return final_state_set;
+}
+
+
+
+
+//////////////////////////////////////////////////////////////////////
+
+
+
+void read_nfa();
+
+
+
+/////////////////////////////////////////////////////////////////////////
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<stdbool.h>
+
+//Global variables in C
+
+int **transitions; //transition table
+int n_symb;
+bool *final; //Final states
+char *alphabets;
+int state,init_state,num_states;
+
+int new_states,new_init_state;
+int **newdfatrans;
+bool *new_finals;
+bool **group;
+int num_groups;
+
+
+
+int alpha_to_int(char alpha)
+{
+	int i;
+	for(i=0;i<n_symb;i++)
+	{
+		if(alpha==alphabets[i])
+			break;
+	}
+	if(i==n_symb)
+		return -1;
+	return i;
+}
+
+
+void dfaparse()
+{
+    //printf("%s",filename);
+	FILE *inp = fopen("dfa.txt","r");
+	char word[50],c;
+	int i,j,temp,temp2;
+	fscanf(inp,"%s %d",word,&num_states);
+//	printf("%s %d",word,num_states);
+	fscanf(inp,"%s %d",word,&init_state);
+//	printf("%s %d",word,init_state);
+	fscanf(inp,"%s %d",word,&n_symb);
+//	printf("%s %d",word,n_symb);
+	//read final states
+	final = (bool *)malloc(num_states*sizeof(bool));
+	memset(final,0,num_states*sizeof(bool));
+	fscanf(inp,"%s %s %d",word,word,&temp);
+	if (temp==125)
+	{
+		printf("No final state in the DFA\n");
+		return;
+	}
+	else
+		final[temp]=true;
+	while(1)
+	{
+		c = fgetc(inp);
+		if (c == '}')
+			break;
+		else if(c == ',')
+		{
+			fscanf(inp," %d ",&temp);
+			final[temp]=true;
+		}
+	}
+	//read alphabets
+	alphabets = (char *)malloc(n_symb*sizeof(char));
+	fscanf(inp,"%s %s",word,word);
+	i=0;
+	fscanf(inp," %c ",&alphabets[i++]);
+	while(1)
+	{
+		c=fgetc(inp);
+		if (c=='}')
+			break;
+		else if(c==',')
+		{	
+			fscanf(inp," %c ",&alphabets[i++]);
+		}
+	}
+
+	//read transitions
+	transitions = (int**)malloc(num_states*sizeof(int *));
+	for(i=0;i<num_states;i++)
+		transitions[i]=(int *)malloc(n_symb*sizeof(int));
+	for(i=0;i<num_states;i++)
+		for (j = 0; j < n_symb; j++)
+			transitions[i][j]= -1;
+	fscanf(inp,"%s",word);
+	while(fscanf(inp,"%s",word)!=EOF)
+	{
+		fscanf(inp," %d ",&temp);
+		int symb;
+		fscanf(inp," , %c ",&c);
+		symb = alpha_to_int(c);
+		fscanf(inp," %s ",word);
+		fscanf(inp," %d ",&temp2);
+		if(transitions[temp][symb]!=-1)
+		{
+			printf("Error in defining DFA.One state cannot have two transitions on the same symb\n");
+			return;
+		}
+		else 
+			transitions[temp][symb]=temp2;
+		c=fgetc(inp);
+		if(c==',')
+		{
+			printf("incorrect input dfa\n");
+			return;
+		}
+		fscanf(inp,"%s",word);
+	}
+/*	printf("\nn_states%d init_state %d\n",num_states,init_state);
+    printf("final states \n");
+    for(i=0;i<num_states;i++)
+        printf("%d ",final[i]);
+    printf("\nalphabets\n");
+    for(i=0;i<n_symb;i++)
+        printf("%c\n", alphabets[i]);
+    printf("transitions\n");
+    for(i=0;i<num_states;i++)
+    {
+        for(j=0;j<n_symb;j++)
+        {
+            printf("state: %d symbol: %c -> ",i,alphabets[j]);
+            if(transitions[i][j] == -1)
+                printf("NULL");
+            else
+            {
+                printf("%d ",transitions[i][j]);
+            }
+            printf("\n");
+        }
+    }*/
+    fclose(inp);
+}
+
+
+
+///////////////////////
+int grp(int val) //give the group 
+{
+    int i,j;
+    for(i=0;i<num_groups;i++)
+    {
+        if(group[i][val]==1)
+            return i;
+    }
+    return -1;
+}
+
+void getOptDfaTrans() // give the transitions,final states,initial state for the new dfa
+{
+    int i,j,temp;
+    newdfatrans =(int **)malloc(num_groups*sizeof(int *));
+    for(i=0;i<num_groups;i++)
+        newdfatrans[i]=(int *)malloc(n_symb*sizeof(int));
+    for(i=0;i<num_groups;i++)
+        for(j=0;j<n_symb;j++)
+            newdfatrans[i][j]=-1;
+    new_init_state=grp(init_state); //set new initial state
+    //printf("Total no. of states %d\n",num_groups);
+    //printf("Initial state = %d\n",new_init_state);
+    //set new final states 
+    new_finals = (bool *)malloc(num_groups*sizeof(bool));
+    memset(new_finals,0,num_groups*sizeof(bool));
+    //printf("finalstates {");
+    for(i=0;i<num_states;i++)
+    {
+        if(final[i])
+        {
+            temp = grp(i);
+            new_finals[temp] = true;
+            //printf(" %d ",temp);
+        }
+    }
+    //printf("\n transitions \n");
+    //build the new transition table for the optDfa
+    for(i=0;i<num_groups;i++)
+    {
+        for(j=0;j<num_states;j++)
+            if(group[i][j]==1)
+            {
+                temp = j;
+                break;
+            }
+        for(j=0;j<n_symb;j++)
+        {
+            newdfatrans[i][j]=grp(transitions[temp][j]);
+      //      printf("%d on seeing %c -> %d \n",i,alphabets[j],newdfatrans[i][j]);
+        }
+    }
+}
+
+int rowToEdit(int i, int g)
+{
+    if(i==0)
+        return g;
+    else
+        return num_groups+i-1;
+}
+
+
+void split(int g,int *tmp)
+{
+    int i, j, k=0;
+    int tranToGrp[num_states], diffGrps=0;
+    bool grpPresent[num_groups];
+    //contains groups to which transitions are made
+    for(i=0; i<num_groups; i++)
+        grpPresent[i]=0;
+    //gives the group no. in which the state makes the transition
+    for(i=0; i<num_states; i++)
+    {
+        if(tmp[i]==-1)
+            tranToGrp[i]=-1;
+        else
+        {
+            tranToGrp[i]=grp(tmp[i]);
+            grpPresent[tranToGrp[i]]=1;
+        }
+    }
+    //no. of groups to be split into
+    for(i=0; i<num_groups; i++)
+        diffGrps += grpPresent[i];
+    
+    for(i=0; i<num_groups; i++)
+    {
+        if(grpPresent[i])
+        {
+            for(j=0; j<num_states; j++)
+            {
+                if(tranToGrp[j]==i)
+                    group[rowToEdit(k, g)][j]=1;
+                
+                else if(tranToGrp[j]!=-1)
+                    group[rowToEdit(k, g)][j]=0;
+            }
+            k++;
+        }
+    }
+
+    num_groups = rowToEdit(k, g);
+    
+    
+}
+
+bool samegrp(int *temp)
+{
+    int i,j;
+    for(i=0;i<num_states;i++)
+        for(j=i+1;j<num_states;j++)
+            if(temp[i]!=-1 && temp[j]!=-1)
+                if(grp(temp[i])!=grp(temp[j]))
+                    return false;
+    return true;
+}
+
+int groupdiv()
+{
+    int i,j,k;
+    int ginit_state;
+    int temp[num_states];
+    for (i=0;i<num_groups;i++)
+    {
+        for (j=0;j<num_states;j++)
+            if(group[i][j]==true)
+            {
+                ginit_state=j;
+                break;
+            }
+        for (k=0;k<n_symb;k++)
+        {
+            for(j=0;j<num_states;j++)
+                temp[j]=-1;
+            temp[ginit_state]=transitions[ginit_state][k];
+            for(j=ginit_state+1;j<num_states;j++)
+            {
+                if(group[i][j])
+                    temp[j]=transitions[j][k];
+            }
+            
+            if(!samegrp(temp))
+            {
+                split(i,temp); // split the group on the input symbol
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+
+
+//write the new dfa to a file
+void printdfatofile()
+{
+    int temp, i, j;
+    FILE *fp = fopen("optdfa.txt","w");
+    fprintf(fp,"n_states %d\n",num_groups);
+    fprintf(fp,"init_state %d\n",new_init_state);
+    fprintf(fp,"n_symbols %d\n",n_symb);
+    fprintf(fp,"final_state_set { ");
+    for(i=0;i<num_groups;i++)
+        if(new_finals[i]==true)
+        {
+            temp=i;
+            break;
+        }
+    fprintf(fp,"%d ",temp);
+    for(i=temp+1;i<num_groups;i++)
+    {
+        if(new_finals[i]==true)
+            fprintf(fp,", %d ",i);
+    }
+    fprintf(fp,"}\n");
+    //alphabets
+    fprintf(fp,"alphabets { %c ",alphabets[0]);
+    for(i=1;i<n_symb;i++)
+        fprintf(fp,", %c ",alphabets[i]);
+    fprintf(fp,"}\n");
+    //transitions
+    fprintf(fp,"transition\n");
+    for(i=0;i<num_groups;i++)
+        for (j=0;j<n_symb;j++)
+            if(newdfatrans[i][j]!=-1)
+                fprintf(fp,"{ %d , %c ( %d ) }\n",i,alphabets[j],newdfatrans[i][j]);
+}
+
+int main()
+{
+    dfaparse();
+    group = (bool **)malloc(num_states * sizeof(bool *));
+    int i,j,k,fin;
+    for(i=0; i<num_states; i++)
+        group[i] = (bool *)malloc(num_states * sizeof(bool));
+    
+    int temp;
+    for(i=0;i<num_states;i++)
+        for(j=0;j<num_states;j++)
+            group[i][j]=0;
+  //  memset(group,0,sizeof(group[0][0])*num_states*num_states);
+    //divide into finals and non finals;
+    for(i=0;i<num_states;i++)
+    {
+        if(final[i]==true)
+            group[0][i]=true;
+        else
+            group[1][i]=true;
+    }
+    num_groups=2;
+    fin=0;
+    while(!fin)
+    {
+        fin=groupdiv();
+    }
+    
+    getOptDfaTrans();
+    printf("\nDfa optimiztion complete\n");
+    printdfatofile();
+    return 1;
+}
+
+
+//////////////////////////////////////////////////////////////////////
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+/* Global Variables */
+
+int **transitions; //transition table
+int n_symb;
+bool *final; //Final states
+char *alphabets;
+int state,init_state,num_states;
+
+//parse the dfa
+int alpha_to_int(char alpha)
+{
+	int i;
+	for(i=0;i<n_symb;i++)
+	{
+		if(alpha==alphabets[i])
+			break;
+	}
+	if(i==n_symb)
+		return -1;
+	return i;
+}
+
+void dfaparse()
+{
+    //printf("%s",filename);
+	FILE *inp = fopen("optdfa.txt","r");
+	char word[50],c;
+	int num_states,i,j,temp,temp2;
+	fscanf(inp,"%s %d",word,&num_states);
+//	printf("%s %d",word,num_states);
+	fscanf(inp,"%s %d",word,&init_state);
+//	printf("%s %d",word,init_state);
+	fscanf(inp,"%s %d",word,&n_symb);
+//	printf("%s %d",word,n_symb);
+	//read final states
+	final = (bool *)malloc(num_states*sizeof(bool));
+	memset(final,0,num_states*sizeof(bool));
+	fscanf(inp,"%s %s %d",word,word,&temp);
+	if (temp==125)
+	{
+		printf("No final state in the DFA\n");
+		return;
+	}
+	else
+		final[temp]=true;
+	while(1)
+	{
+		c = fgetc(inp);
+		if (c == '}')
+			break;
+		else if(c == ',')
+		{
+			fscanf(inp," %d ",&temp);
+			final[temp]=true;
+		}
+	}
+	//read alphabets
+	alphabets = (char *)malloc(n_symb*sizeof(char));
+	fscanf(inp,"%s %s",word,word);
+	i=0;
+	fscanf(inp," %c ",&alphabets[i++]);
+	while(1)
+	{
+		c=fgetc(inp);
+		if (c=='}')
+			break;
+		else if(c==',')
+		{	
+			fscanf(inp," %c ",&alphabets[i++]);
+		}
+	}
+
+	//read transitions
+	transitions = (int**)malloc(num_states*sizeof(int *));
+	for(i=0;i<num_states;i++)
+		transitions[i]=(int *)malloc(n_symb*sizeof(int));
+	for(i=0;i<num_states;i++)
+		for (j = 0; j < n_symb; j++)
+			transitions[i][j]= -1;
+	fscanf(inp,"%s",word);
+	while(fscanf(inp,"%s",word)!=EOF)
+	{
+		fscanf(inp," %d ",&temp);
+		int symb;
+		fscanf(inp," , %c ",&c);
+		symb = alpha_to_int(c);
+		fscanf(inp," %s ",word);
+		fscanf(inp," %d ",&temp2);
+		if(transitions[temp][symb]!=-1)
+		{
+			printf("Error in defining DFA.One state cannot have two transitions on the same symb\n");
+			return;
+		}
+		else 
+			transitions[temp][symb]=temp2;
+		c=fgetc(inp);
+		if(c==',')
+		{
+			printf("incorrect input dfa\n");
+			return;
+		}
+		fscanf(inp,"%s",word);
+	}
+	/*printf("\nn_states%d init_state %d\n",num_states,init_state);
+    printf("final states \n");
+    for(i=0;i<num_states;i++)
+        printf("%d ",final[i]);
+    printf("\nalphabets\n");
+    for(i=0;i<n_symb;i++)
+        printf("%c\n", alphabets[i]);
+    printf("transitions\n");
+    for(i=0;i<num_states;i++)
+    {
+        for(j=0;j<n_symb;j++)
+        {
+            printf("state: %d symbol: %c -> ",i,alphabets[j]);
+            if(transitions[i][j] == -1)
+                printf("NULL");
+            else
+            {
+                printf("%d ",transitions[i][j]);
+            }
+            printf("\n");
+        }
+    }*/
+    fclose(inp);
+}
+//simulate the dfa
+int dfasim(char c)
+{
+	int i,cur_symb,j;
+	j = (sizeof(alphabets)/sizeof(char));
+	for (i=0;i<j;i++)
+	{
+		if (c==alphabets[i])
+		{
+			cur_symb = i;
+			break;
+		}
+	}
+	if (i==j)
+	{
+		printf("Unknown symbol found\n");
+		return 0;
+	}
+
+	else if (transitions[state][cur_symb]!= -1)
+	{
+	    printf("%d on seeing %c ->",state,c);
+		state = transitions[state][cur_symb];
+		printf("%d \n",state);
+		return 1;
+	}
+	else
+	{
+		printf("incorrect transition found\n");
+		return 0;
+	}
+}
+
+int main(int argc,char *argv[])
+{
+	char temp[6],c;
+	int i=0;
+	char str[50];
+	//size_t len = 0;
+	//ssize_t read;
+	int res=0,sim1;
+	printf("\nEnter the input string:");
+	scanf("%s",str);
+	dfaparse();
+	state = init_state;
+	for(i=0;i<strlen(str);i++)
+	{
+		sim1=dfasim(str[i]);
+		if(sim1==0)
+			break;
+	}
+	if(sim1==0)
+	{
+		printf("String does not lie in the grammar\n");
+		return -1;
+	}
+	if (final[state]==1)
+		res = 1;
+	
+	//if the last state is final state or not
+	if (res==1)
+		printf("This string belongs to the grammar this DFA is simulating\n");
+	else 
+		printf("String does not lie in the grammar\n");
+	return 0;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+
+#include "reg.h"
+
+int alphaToInt(char c)
+{
+    if(c=='E')
+        return 26;
+    return c - 'a';
+}
+
+
+//add transitions and states of n2 to n1
+void addTransitions(struct nfa *n1, struct nfa *n2)
+{
+    int i, j, k;
+    //in 1 start adding states after its own
+    for(i=n1->nStates; i<n1->nStates + n2->nStates; i++)
+    {
+        //for every alpha on which transition exists from 2's state
+        for(j=0; j<alpha; j++)
+        {
+            if(n2->tran[i-n1->nStates][j]!=NULL)        //transition on j exists for this state
+            {
+                n1->tran[i][j] = (bool *)malloc(states * sizeof(bool));
+                for(k=0; k<states; k++)
+                    n1->tran[i][j][k]=0;
+                //add transition for each i, j in 1
+                //transitions of 2 will start from k in n1
+                for(k=n1->nStates; k<n1->nStates+n2->nStates; k++)
+                    n1->tran[i][j][k] = n2->tran[i-n1->nStates][j][k-n1->nStates];
+            }
+        }
+    }
+}
+
+//add states of 2 to 1
+//update n1->nStates
+//add corresponding transitions of 2 to 1
+//add E production from final of 1 to start of 2
+//replace final of 1 by final of 2
+//the start state remains same
+void concat(struct nfa *n1, struct nfa *n2)
+{
+    int i, j;
+    addTransitions(n1, n2);
+    //add E production from old final of 1 to old start of 2
+    for(i=0; i<n1->nStates; i++)
+    {
+        if(n1->final[i])
+        {
+            if(n1->tran[i][alphaToInt('E')]==NULL)    //no transition on epsilon exists
+            {
+                n1->tran[i][alphaToInt('E')] = (bool *)malloc(states * sizeof(bool));
+                for(j=0; j<states; j++)
+                    n1->tran[i][alphaToInt('E')][j]=0;
+                n1->tran[i][alphaToInt('E')][n2->start+n1->nStates]=1;
+            }
+            else
+                n1->tran[i][alphaToInt('E')][n2->start+n1->nStates]=1;
+        }
+    }
+    //replace final of 1 by final of 2
+    for(i=0; i<n1->nStates; i++)
+        n1->final[i]=0;
+    for(i=n1->nStates; i<states; i++)
+        n1->final[i]=n2->final[i-n1->nStates];
+    //nStates of 1 = nStates of 1 + nStates of 2
+    
+    n1->nStates += n2->nStates;
+    
+}
+
+//add epsilon production from final states to start state
+//add epsilon production from start state to final states
+//no. of states remain same
+void iterate(struct nfa *n1)
+{
+    int i, j;
+    for(i=0; i<states; i++)
+    {
+        if(n1->final[i])
+        {
+            if(n1->tran[i][alphaToInt('E')]==NULL)    //no transition on epsilon exists
+            {
+                n1->tran[i][alphaToInt('E')] = (bool *)malloc(states * sizeof(bool));
+                for(j=0; j<states; j++)
+                    n1->tran[i][alphaToInt('E')][j]=0;
+                n1->tran[i][alphaToInt('E')][n1->start]=1;
+            }
+            else
+                n1->tran[i][alphaToInt('E')][n1->start]=1;
+        }
+    }
+    //add epsilon production from start state to final states
+    for(i=0; i<states; i++)
+    {
+        if(n1->final[i])
+        {
+            if(n1->tran[n1->start][alphaToInt('E')]==NULL)    //no transition on epsilon exists
+            {
+                n1->tran[n1->start][alphaToInt('E')] = (bool *)malloc(states * sizeof(bool));
+                for(j=0; j<states; j++)
+                    n1->tran[n1->start][alphaToInt('E')][j]=0;
+                n1->tran[n1->start][alphaToInt('E')][i]=1;
+            }
+            else
+                n1->tran[n1->start][alphaToInt('E')][i]=1;
+        }
+    }
+}
+
+//add transitions of 2 to 1
+//add new start state to 1
+//E productions to initial start states of 1 and 2
+//final of 1 = final of 1 + final of 2
+//nStates of 1 = nStates of 1 + nStates of 2 + 1
+void orOperation(struct nfa *n1, struct nfa *n2)
+{
+    int i, j;
+    addTransitions(n1, n2);
+
+    int oldN1Start=n1->start;
+    //change start state of n1
+    n1->start=n1->nStates+n2->nStates;
+    
+    //add new start state to 1
+    //E productions to initial start states of 1 and 2
+    
+    n1->tran[n1->start][alphaToInt('E')] = (bool *)malloc(states * sizeof (bool));
+    
+    for(i=0; i<states; i++)
+        n1->tran[n1->start][alphaToInt('E')][i]=0;
+    n1->tran[n1->start][alphaToInt('E')][oldN1Start]=1;
+    n1->tran[n1->start][alphaToInt('E')][n2->start+n1->nStates]=1;
+    
+    //final of 1 = final of 1 + final of 2
+    for(i=0; i<states; i++)
+        n1->final[i] = n1->final[i];
+    for(i=n1->nStates; i<states; i++)
+        n1->final[i] = n2->final[i-n1->nStates];
+    
+    //nStates of 1 = nStates of 1 + nStates of 2 + 1
+    n1->nStates = n1->nStates + n2->nStates + 1;
+}
+
+
+//create a nfa which accepts the input char
+//two states
+//0 is start state
+//1 is acc state
+//add transition from 0 to 1
+void createNfa(struct nfa *n1, char a)
+{
+    n1->nStates=2;
+    n1->start=0;
+    int i;
+    for(i=0; i<states; i++)
+        n1->final[i]=0;
+    n1->final[1]=1;
+    int j;
+    for(i=0; i<states; i++)
+        for(j=0; j<alpha; j++)
+            n1->tran[i][j]=NULL;
+    n1->tran[0][alphaToInt(a)] = (bool *)malloc(states * sizeof(bool));
+    for(i=0; i<states; i++)
+        n1->tran[0][alphaToInt(a)][i]=0;
+    n1->tran[0][alphaToInt(a)][1]=1;
+}
+
+//store the output NFA in ans
+//from the input postfix regex
+void regToNfa()
+{
+    struct nfa temp[regMaxLen], *temp1;
+	int i, l=strlen(reg), j=0;
+	
+	for(i=0; i<l; i++)
+	{
+	   if(reg[i]>='a' && reg[i]<='z')
+	   {
+	        createNfa(&temp[j], reg[i]);
+	        nPush(&temp[j++]);
+	   }
+	   else
+	   {
+	       switch(reg[i])
+	       {
+	           case '+':
+	                temp1=nTop;
+	                nPop();
+	                
+	                temp[j]=*nTop;
+	                nPop();
+	                //temp[j]+temp1
+	                orOperation(&temp[j], temp1);
+	                nPush(&temp[j++]);
+	                break;
+	           case '.':
+	                temp1=nTop;
+	                nPop();
+	                temp[j]=*nTop;
+	                nPop();
+	                //temp[j].temp1
+	                concat(&temp[j], temp1);
+	                nPush(&temp[j++]);
+	                break;
+	           case '*':
+	                temp[j]=*nTop;
+	                nPop();
+	                //temp1*
+	                iterate(&temp[j]);
+	                nPush(&temp[j++]);
+	                break;
+	       }
+	   }
+	}
+}
+
+
+//print the ans NFA
+//as required by manku
+void printNfa(struct nfa *ans)
+{
+    char const* const file = "nfa.txt";
+    FILE* out = fopen(file, "w+");
+    fprintf(out, "nStates %d\n", ans->nStates);
+    
+    fprintf(out, "initialState %d\n", ans->start);
+    
+    fprintf(out, "finalStates { ");
+    int i, j, k;
+    for(i=0; i<ans->nStates; i++)
+        if(ans->final[i])
+        {
+            if(i)
+                fprintf(out, "%d ", i);
+            else
+                fprintf(out, ", %d ", i);
+        }
+    fprintf(out, "}\n");
+    
+    fprintf(out, "alphabets { ");
+    for(i=0; i<alpha-1; i++)
+        fprintf(out, "%c, ", 'a'+i);
+    fprintf(out, "E }\n");
+    
+    fprintf(out, "transitions\n");
+    for(i=0; i<ans->nStates; i++)
+    {
+        for(j=0; j<alpha; j++)
+        {
+            if(ans->tran[i][j]!=NULL)
+            {
+                fprintf(out, "{ %d ,", i);
+                
+                char tmp = j+'a';
+                if(j==26)
+                    tmp='E';
+                fprintf(out, " %c ( ", tmp);
+                int nTran=0;
+                for(k=0; k<ans->nStates; k++)
+                {
+                    if(ans->tran[i][j][k])
+                    {
+                        if(nTran==0)
+                            fprintf(out, "%d ", k);
+                        else
+                            fprintf(out, ", %d ", k);
+                        nTran++;
+                    }
+                }
+                fprintf(out, ") }\n");
+            }
+        }
+    }
+    fclose(out);
+}
+
+int main(int argc, char *argv[])
+{
+    
+    char const* const fileName = "regPostfix.txt";
+    FILE* inp = fopen(fileName, "r");
+	//read the line which contains the regex in postfix form
+	fgets(reg, sizeof(reg), inp);
+	
+	regToNfa();
+	struct nfa *ans;
+	ans=nTop;
+	printNfa(ans);
+	
+	fclose(inp);
+	return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <unistd.h>
+#include <sys/types.h>
+
+/*************GLOBAL VARIABLES*************/
+
+#define regMaxLen 256                   //max len of regex
+char reg[regMaxLen];                    //contains the regex
+                                        //later changed to postfix
+#define states 100                      //max no. of states in nfa
+#define alpha 27                        //a-z and epsilon as E
+
+
+
+//precedence of various operators                            
+#define LP 1
+#define PLUS 2
+#define DOT 3
+#define AST 4
+#define ID 5
+
+
+struct nfa
+{
+    bool *tran[states][alpha];   //a 2D array, each cell points to a bit vector(length = states)
+                                 //true entries in the vector denotes possible transitions
+    int nStates;
+    int start;
+    bool final[states];
+};
+
+/*******************************************/
+
+
+
+
+
+
+/************implement stack for postfix conversion***************/
+
+char st[regMaxLen], top = '\0';
+int sz = 0;
+
+
+void push(char a)
+{
+    if(sz>=regMaxLen)
+        fprintf(stderr, "stack overflow: large regex");
+    else
+    {
+        sz++;
+        st[sz] = a;
+        top = a;
+    }
+}
+
+void pop()
+{
+    if(sz<=0)
+        fprintf(stderr, "stack underflow");
+    else
+    {
+        sz--;
+        top = st[sz];
+    }
+}
+
+/*****************************************/
+
+
+
+
+
+/************implement stack for postfix evaluation***************/
+
+struct nfa *nSt[regMaxLen];
+struct nfa *nTop;
+int nSz = 0;
+
+
+void nPush(struct nfa *a)
+{
+    if(nSz>=regMaxLen)
+        fprintf(stderr, "stack overflow: large regex");
+    else
+    {
+        nSz++;
+        nSt[nSz] = a;
+        nTop = a;
+    }
+}
+
+void nPop()
+{
+    if(nSz<=0)
+        fprintf(stderr, "stack underflow");
+    else
+    {
+        nSz--;
+        nTop = nSt[nSz];
+    }
+}
+
+/*****************************************/
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////
+
+
+
+#include "reg.h"
+
+
+/*	Following operations are supported
+*	a+b denotes a or b
+*	a.b denotes concatenation
+*	a* denotes zero or more instances of a
+*   user may also use parantheses
+*/
+
+
+//return precedence of the operators
+int getPrecedence(char c)
+{
+    switch(c)
+    {
+        case '(':
+            return LP;
+            break;
+        case '+':
+            return PLUS;
+            break;
+        case '.':
+            return DOT;
+            break;
+        case '*':
+            return AST;
+            break;
+        default:
+            return ID;
+            break;
+    }
+}
+
+
+
+//convert infix to postfix regex
+//assuming correct input regex
+void toPostfix()
+{
+    int l = strlen(reg);
+    char post[l];       //contains the ans
+    int i=0, j=0, topPrecedence, currPrecedence;
+    for(i=0; i<l; i++)
+    {
+        switch(reg[i])
+        {
+            case '(':
+                push(reg[i]);
+                break;
+                
+            case ')':
+                while(top!='(')
+                {
+                    post[j++]=top;
+                    pop();
+                }
+                pop();
+                break;
+            
+            default:
+                while(sz>0)
+                {
+                    topPrecedence = getPrecedence(top);
+                    currPrecedence = getPrecedence(reg[i]);
+                    if(topPrecedence >= currPrecedence)
+                    {
+                        post[j++] = top;
+                        pop();
+                    }
+                    else
+                        break;
+                }
+                push(reg[i]);
+                break;
+        }
+    }
+    while(sz>0)
+    {
+        post[j++] = top;
+        pop();
+    }
+
+    strcpy(reg, post);
+}
+
+//initialize all the global variables
+void init()
+{
+    st[sz] = '\0';
+    
+    toPostfix();
+    
+}
+
+int main(int argc, char *argv[])
+{
+    
+	
+    char const* const fileName = "regInfix.txt";
+    FILE* inp = fopen(fileName, "r");
+    
+	//read the line which contains the regex
+	fgets(reg, sizeof(reg), inp);
+	
+	//initialize all the global variables
+    init();
+    FILE* out = fopen("regPostfix.txt", "w+");
+	fputs(reg, out);
+	fclose(inp);
+	fclose(out);
+	return 0;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////

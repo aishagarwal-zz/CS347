@@ -1,0 +1,15 @@
+n_states 11
+intitial_state 0
+final_state_set { 10 }
+alphabets { a , b , epsilon }
+transition
+{ 0 , epsilon ( 1 , 7 ) }
+{ 1 , epsilon ( 2 , 4) }
+{ 2 , a ( 3 ) }
+{ 3 , epsilon ( 6 ) }
+{ 4 , b ( 5 ) }
+{ 5 , epsilon ( 6 ) }
+{ 6 , epsilon ( 1 , 7 ) }
+{ 7 , a ( 8 ) }
+{ 8 , b ( 9 ) }
+{ 9 , b ( 10 ) }

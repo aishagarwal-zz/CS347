@@ -1,0 +1,12 @@
+n_states 2
+initial_state 0
+number_symbol 2
+final_state_set { 0 , 1 }
+alphabets { 0 , 1 }
+transition
+{ 0 , 0 ( 1 ) }
+{ 0 , 1 ( 0 ) }
+{ 1 , 0 ( 2 ) }
+{ 1 , 1 ( 0 ) }
+{ 2 , 0 ( 2 ) }
+{ 2 , 1 ( 2 ) }
