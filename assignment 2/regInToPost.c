@@ -9,33 +9,6 @@
 */
 
 
-
-// char checkSt[regMaxLen], checkTop='\0';
-// int checkSz=0;
-// bool checkPush(char a)
-// {
-//     if(checkSz>regMaxLen)
-//         return 0;
-//     else
-//     {
-//         checkSz++;
-//         checkSt[checkSz]=a;
-//         top=a;
-//         return 1;
-//     }
-// }
-// bool checkPop()
-// {
-//     if(checkSz<=0)
-//         return 0;
-//     else
-//     {
-//         checkSz--;
-//         top=checkSt[checkSz];
-//         return 1;
-//     }
-// }
-
 //return 1 if invalid regex
 //else return 0
 bool isInvalid()
@@ -101,7 +74,7 @@ bool isInvalid()
                 return 1;
             if(reg[i-1]!='*' && (reg[i-1]<'a' || reg[i-1]>'z') && reg[i-1]!=')')
                 return 1;
-            if(reg[i+1]!='(' && (reg[i-1]<'a' || reg[i-1]>'z'))
+            if(reg[i+1]!='(' && (reg[i+1]<'a' || reg[i+1]>'z'))
                 return 1;
         }
         else if(reg[i]=='*')
