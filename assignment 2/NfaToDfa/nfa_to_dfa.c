@@ -196,7 +196,7 @@ int main()
     read_nfa();
     subset_construction();
     
-    printf("subset_construction completed\n");
+    /*printf("subset_construction completed\n");
     
     printf("dfa states\n");
     for(i=0;i<n_dstates;i++)
@@ -209,7 +209,7 @@ int main()
     for(i=0;i<n_dstates;i++)
         for(j=0;j<n_alphabet-1;j++)
             printf(" %d %s %d\n",i,alphabet[j],  dtransition[i][j]);
-    
+    */
     FILE *fp = fopen("dfa.txt","w");
     fprintf(fp,"n_states %d\n",n_dstates);
     fprintf(fp,"initial_state 0\n");
