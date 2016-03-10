@@ -63,6 +63,7 @@ void dfaparse()
 	fscanf(inp,"%s %s",word,word);
 	i=0;
 	fscanf(inp," %c ",&alphabets[i++]);
+//	printf("%c ,",alphabets[i-1]);
 	while(1)
 	{
 		c=fgetc(inp);
@@ -71,7 +72,9 @@ void dfaparse()
 		else if(c==',')
 		{	
 			fscanf(inp," %c ",&alphabets[i++]);
+//				printf("%c ,",alphabets[i-1]);
 		}
+//		printf("\n");
 	}
 
 	//read transitions
@@ -133,7 +136,7 @@ void dfaparse()
 int dfasim(char c)
 {
 	int i,cur_symb,j;
-	j = (sizeof(alphabets)/sizeof(char));
+	j = n_symb;
 	for (i=0;i<j;i++)
 	{
 		if (c==alphabets[i])
