@@ -19,6 +19,7 @@ bool* epsilon_closure(bool *state_set)
     }
     while ( n_newstates )
     {
+        temp_new_state = -1;
         for( i=0; i<n_states; i++ )
         {
             if ( newstates[i] == true )
@@ -29,9 +30,9 @@ bool* epsilon_closure(bool *state_set)
                 break;
             }
         }
-        if ( is_transition (temp_new_state , alpha_to_int("epsilon") ) )
+        if ( temp_new_state != -1 && is_transition (temp_new_state , alpha_to_int("E") ) )
         {
-            temp_state_set = transition[temp_new_state][alpha_to_int("epsilon")];
+            temp_state_set = transition[temp_new_state][alpha_to_int("E")];
             for(i=0;i<n_states;i++)
             {
                 if(temp_state_set[i] && !final_state_set[i])
