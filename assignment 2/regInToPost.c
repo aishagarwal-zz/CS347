@@ -9,6 +9,119 @@
 */
 
 
+
+// char checkSt[regMaxLen], checkTop='\0';
+// int checkSz=0;
+// bool checkPush(char a)
+// {
+//     if(checkSz>regMaxLen)
+//         return 0;
+//     else
+//     {
+//         checkSz++;
+//         checkSt[checkSz]=a;
+//         top=a;
+//         return 1;
+//     }
+// }
+// bool checkPop()
+// {
+//     if(checkSz<=0)
+//         return 0;
+//     else
+//     {
+//         checkSz--;
+//         top=checkSt[checkSz];
+//         return 1;
+//     }
+// }
+
+//return 1 if invalid regex
+//else return 0
+bool isInvalid()
+{
+    int i, l=strlen(reg), paraBalance=0;
+    //check all symbols are valid
+    for(i=0; i<l; i++)
+        if(reg[i]!='.' && reg[i]!='*' && reg[i]!='+')
+            if(reg[i]<'a' && reg[i]>'z')
+                return 1;
+    
+    for(i=0; i<l; i++)
+    {
+        if(reg[i]=='(')
+        {
+            paraBalance++;
+            
+            if(i==l-1)
+                return 1;
+            if(i!=0)
+            {
+                if(reg[i-1]!='+' && reg[i-1]!='.')
+                    return 1;
+            }
+            if(i!=l-1)
+            {
+                if(reg[i+1]<'a' || reg[i+1]>'z')
+                    return 1;
+            }
+        }
+        else if(reg[i]==')')
+        {
+            paraBalance--;
+            if(i==0)
+                return 1;
+            if(i!=0)
+            {
+                if(reg[i-1]!='*' && (reg[i-1]<'a' || reg[i-1]>'z'))
+                    return 1;
+            }
+            if(i!=l-1)
+            {
+                if(reg[i+1]!='+' && reg[i+1]!='.' && reg[i+1]!='*')
+                    return 1;
+            }
+        }
+        else if(reg[i]>='a' && reg[i]<='z')
+        {
+            if(i!=0)
+            {
+                if(reg[i-1]!='(' && reg[i-1]!='+' && reg[i-1]!='.')
+                    return 1;
+            }
+            if(i!=l-1)
+            {
+                if(reg[i+1]!='+' && reg[i+1]!='.' && reg[i+1]!='*' && reg[i+1]!=')')
+                    return 1;
+            }
+        }
+        else if(reg[i]=='+' || reg[i]=='.')
+        {
+            if(i==0 || i==l-1)
+                return 1;
+            if(reg[i-1]!='*' && (reg[i-1]<'a' || reg[i-1]>'z') && reg[i-1]!=')')
+                return 1;
+            if(reg[i+1]!='(' && (reg[i-1]<'a' || reg[i-1]>'z'))
+                return 1;
+        }
+        else if(reg[i]=='*')
+        {
+            if(i==0)
+                return 1;
+            if(reg[i-1]!=')' && (reg[i-1]<'a' || reg[i-1]>'z'))
+                return 1;
+            if(i!=l-1)
+                if(reg[i+1]!=')' && reg[i+1]!='+' && reg[i+1]!='.')
+                    return 1;
+        }
+            
+            
+    }
+    if(paraBalance!=0)
+        return 1;
+    return 0;
+}
+
 //return precedence of the operators
 int getPrecedence(char c)
 {
@@ -102,6 +215,12 @@ int main(int argc, char *argv[])
     
 	//read the line which contains the regex
 	fgets(reg, sizeof(reg), inp);
+	
+	if(isInvalid())
+	{
+	    fprintf(stderr, "invalid regex\n");
+	    return 0;
+	}
 	
 	//initialize all the global variables
     init();
