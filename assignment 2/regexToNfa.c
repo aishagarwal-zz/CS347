@@ -220,27 +220,29 @@ void regToNfa()
 //as required by manku
 void printNfa(struct nfa *ans)
 {
-    char const* const file = "nfa.txt";
+    char const* const file = "epsilon_nfa.txt";
     FILE* out = fopen(file, "w+");
     fprintf(out, "nStates %d\n", ans->nStates);
     
     fprintf(out, "initialState %d\n", ans->start);
     
     fprintf(out, "finalStates { ");
-    int i, j, k;
+    int i, j, k, flag=0;
     for(i=0; i<ans->nStates; i++)
         if(ans->final[i])
         {
-            if(i)
+            if(flag==0)
                 fprintf(out, "%d ", i);
             else
                 fprintf(out, ", %d ", i);
+        
+            flag=1;
         }
     fprintf(out, "}\n");
     
     fprintf(out, "alphabets { ");
     for(i=0; i<alpha-1; i++)
-        fprintf(out, "%c, ", 'a'+i);
+        fprintf(out, "%c , ", 'a'+i);
     fprintf(out, "E }\n");
     
     fprintf(out, "transitions\n");
