@@ -218,11 +218,16 @@ int main()
     fprintf(fp,"final_state_set { ");
     for(i=0;i<n_dstates;i++)
     {
-        for(j=0;j<n_states;j++)
+        if(fstates_set[0] == true && dstates[i][0] == true)
+            {
+                fprintf(fp,"%d ",i);
+                
+            }
+        for(j=1;j<n_states;j++)
         {
             if(fstates_set[j] == true && dstates[i][j] == true)
             {
-                fprintf(fp,"%d ",i);
+                fprintf(fp,", %d ",i);
                 break;
             }
         }
