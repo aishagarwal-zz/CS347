@@ -32,6 +32,7 @@ character "'"."'"
 {ID}    printf(" ID , %s ",yytext);
 "<<"    printf(" LL ");
 ">>"    printf(" GG ");
+[ \t\n] ;
 {character} printf("char %s",yytext);
 
 .   printf("ERROR TOKEN %s",yytext);
