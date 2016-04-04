@@ -257,7 +257,7 @@ void printNfa(struct nfa *ans)
                 char tmp = j+'a';
                 if(j==26)
                     tmp='E';
-                fprintf(out, " %c ( ", tmp);
+                fprintf(out, "  %c ( ", tmp);
                 int nTran=0;
                 for(k=0; k<ans->nStates; k++)
                 {

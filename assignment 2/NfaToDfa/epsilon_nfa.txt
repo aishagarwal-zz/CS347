@@ -1,13 +1,12 @@
-nStates 9
-initialState 4
-finalStates { 8 }
+nStates 7
+initialState 0
+finalStates { 3 , 5 }
 alphabets { a , b , c , d , e , f , g , h , i , j , k , l , m , n , o , p , q , r , s , t , u , v , w , x , y , z , E }
 transitions
 { 0 , a ( 1 ) }
-{ 1 , E ( 4 , 5 ) }
+{ 1 , E ( 6 ) }
 { 2 , b ( 3 ) }
-{ 3 , E ( 4 , 5 ) }
-{ 4 , E ( 0 , 1 , 2 , 3 ) }
-{ 5 , a ( 6 ) }
-{ 6 , E ( 7 ) }
-{ 7 , b ( 8 ) }
+{ 3 , E ( 6 ) }
+{ 4 , c ( 5 ) }
+{ 5 , E ( 6 ) }
+{ 6 , E ( 2 , 3 , 4 , 5 ) }
