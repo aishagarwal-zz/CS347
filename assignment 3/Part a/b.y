@@ -82,7 +82,7 @@
 
 %token < node1> RETURN
 
-%type < node1 >  S1, S func_decl func_defn semi stmt datatype opt_arg_list func_type arg_list arg func_stmt rt expr stmt_list colon opt_else opt_stmt_list var_decl func_call io else_stmt expr1 rel operator expr2 add_sub expr3 mul_div term id_list opt_expr_list expr_list
+%type < node1 >  S1, S func_decl end gg then do ll rp func_decl1 func_defn semi stmt datatype opt_arg_list func_type arg_list arg func_stmt rt expr stmt_list colon opt_else opt_stmt_list var_decl func_call io else_stmt expr1 rel operator expr2 add_sub expr3 mul_div term id_list opt_expr_list expr_list
 
 %%
 
@@ -90,14 +90,18 @@ S1 : S  {printf("S1 : S\n"); struct node *newNode = (struct node *)malloc(sizeof
     ;
 
 S : 
-      func_defn  S    {  printf("S : func_defn S\n");  struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "S");    newNode->nChilds=1; updateChild(newNode, $1, NULL, NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL); $$=newNode;} 
-    |  func_decl semi    S       {  printf("S : func_decl SEMI S\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "S");    newNode->nChilds=3; updateChild(newNode, $1, $2, $3, NULL,NULL,NULL,NULL,NULL,NULL,NULL); $$=newNode;}
+      func_defn  S    {  printf("S : func_defn S\n");  struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "S");    newNode->nChilds=2; updateChild(newNode, $1, $2, NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL); $$=newNode;} 
+    |  func_decl1    S       {  printf("S : func_decl1 S\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "S");    newNode->nChilds=2; updateChild(newNode, $1, $2, NULL, NULL,NULL,NULL,NULL,NULL,NULL,NULL); $$=newNode;}
     |  stmt    S         {  printf("S : stmt S\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "S");    newNode->nChilds=2; updateChild(newNode, $1, $2, NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL); $$=newNode;}   
     | /* epsilon */       {  printf("S : epsilon\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "S");    newNode->nChilds=1; newNode->childs[0]=NULL; $$=newNode; }
     ;
 
+func_decl1 : 
+                func_decl semi      {   printf("func_decl1 : func_decl semi\n");  struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "func_decl1");    newNode->nChilds=2; updateChild(newNode, $1, $2, NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL); $$=newNode;   }
+                ;
+
 func_decl :
-            datatype ID LP opt_arg_list RP         {  printf("func_decl : func_type ID LP opt_arg_list RP\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "func_decl");    newNode->nChilds=5; updateChild(newNode, $1, $2, $3, $4, $5,  NULL,NULL,NULL,NULL,NULL); $$=newNode;}
+            datatype ID LP opt_arg_list rp         {  printf("func_decl : func_type ID LP opt_arg_list rp\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "func_decl");    newNode->nChilds=5; updateChild(newNode, $1, $2, $3, $4, $5,  NULL,NULL,NULL,NULL,NULL); $$=newNode;}
             ;
             
 func_type : VOID                {  printf("func_type : VOID\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "func_type");    newNode->nChilds=1; updateChild(newNode, $1, NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL); $$=newNode;}
@@ -119,7 +123,7 @@ arg :
     ;
 
 func_defn :
-            func_decl BEGIN1 func_stmt END      {   printf("func_defn : func_decl BEGIN1 func_stmt END\n");    struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "func_defn");    newNode->nChilds=4; updateChild(newNode, $1, $2, $3, $4, NULL,NULL,NULL,NULL,NULL,NULL); $$=newNode;}
+            func_decl BEGIN1 func_stmt end      {   printf("func_defn : func_decl BEGIN1 func_stmt end\n");    struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "func_defn");    newNode->nChilds=4; updateChild(newNode, $1, $2, $3, $4, NULL,NULL,NULL,NULL,NULL,NULL); $$=newNode;}
             ;
             
 func_stmt :
@@ -143,13 +147,17 @@ stmt_list :
 
 stmt :  
         ID colon ASSIGN expr semi           {  printf("stmt : ID COLON ASSIGN expr semi\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "stmt");    newNode->nChilds=5; updateChild(newNode, $1, $2, $3, $4, $5, NULL,NULL,NULL,NULL,NULL); $$=newNode;}
-        |   IF expr THEN stmt opt_else      {  printf("stmt : IF expr THEN stmt opt_else\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "stmt");    newNode->nChilds=5; updateChild(newNode, $1, $2, $3, $4, $5, NULL,NULL,NULL,NULL,NULL); $$=newNode;}
-        |   WHILE expr DO stmt              {  printf("stmt : WHILE expr DO stmt\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "stmt");    newNode->nChilds=4; newNode->childs[0]=$1;newNode->childs[1]=$2;newNode->childs[2]=$3;newNode->childs[3]=$4; $$=newNode;}
-        |   BEGIN1  opt_stmt_list END       {  printf("stmt : BEGIN1  opt_stmt_list END\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "stmt");    newNode->nChilds=3; newNode->childs[0]=$1;newNode->childs[1]=$2;newNode->childs[2]=$3; $$=newNode;}
+        |   IF expr then stmt opt_else      {  printf("stmt : IF expr then stmt opt_else\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "stmt");    newNode->nChilds=5; updateChild(newNode, $1, $2, $3, $4, $5, NULL,NULL,NULL,NULL,NULL); $$=newNode;}
+        |   WHILE expr do stmt              {  printf("stmt : WHILE expr do stmt\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "stmt");    newNode->nChilds=4; newNode->childs[0]=$1;newNode->childs[1]=$2;newNode->childs[2]=$3;newNode->childs[3]=$4; $$=newNode;}
+        |   BEGIN1  opt_stmt_list end       {  printf("stmt : BEGIN1  opt_stmt_list end\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "stmt");    newNode->nChilds=3; newNode->childs[0]=$1;newNode->childs[1]=$2;newNode->childs[2]=$3; $$=newNode;}
         |   var_decl semi                   {  printf("stmt : var_decl semi\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "stmt");    newNode->nChilds=2; newNode->childs[0]=$1;newNode->childs[1]=$2; $$=newNode;}
         |   func_call semi                  {  printf("stmt : func_call semi\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "stmt");    newNode->nChilds=2; newNode->childs[0]=$1;newNode->childs[1]=$2; $$=newNode;}
         |   io semi                         {  printf("stmt : io semi\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "stmt");    newNode->nChilds=2; newNode->childs[0]=$1;newNode->childs[1]=$2; $$=newNode;}
         ;
+        
+then  : THEN            {   printf("then : THEN\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "then");    newNode->nChilds=1; newNode->childs[0] = $1; $$=newNode;}
+    | error              {  yyerror("then missing ");  struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "then");    newNode->nChilds=1; newNode->childs[0] = errorNode(); $$=newNode;}   
+    ;
 
 
 opt_else : 
@@ -164,7 +172,7 @@ else_stmt :
 
 expr : 
         expr1 rel           {  printf("expr : expr1 rel\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "expr");    newNode->nChilds=2; newNode->childs[0]=$1;newNode->childs[1]=$2; $$=newNode;}
-        | LP expr RP        {  printf("expr : LP expr RP\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "expr");    newNode->nChilds=3; newNode->childs[0]=$1;newNode->childs[1]=$2;newNode->childs[2]=$3; $$=newNode;}
+        | LP expr rp        {  printf("expr : LP expr rp\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "expr");    newNode->nChilds=3; newNode->childs[0]=$1;newNode->childs[1]=$2;newNode->childs[2]=$3; $$=newNode;}
         ;
         
 rel :
@@ -231,7 +239,7 @@ datatype :
             ;
 
 func_call :
-            ID LP opt_expr_list RP  {  printf("func_call : ID LP opt_expr_list RP\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "func_call");    newNode->nChilds=4; newNode->childs[0] = $1; newNode->childs[1]=$2; newNode->childs[2]=$3; newNode->childs[3] = $4; $$=newNode;}
+            ID LP opt_expr_list rp  {  printf("func_call : ID LP opt_expr_list rp\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "func_call");    newNode->nChilds=4; newNode->childs[0] = $1; newNode->childs[1]=$2; newNode->childs[2]=$3; newNode->childs[3] = $4; $$=newNode;}
             ;
             
 opt_expr_list : expr_list           {  printf("opt_expr_list : expr_list\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "opt_expr_list");    newNode->nChilds=1; newNode->childs[0] = $1; $$=newNode;}
@@ -242,10 +250,24 @@ expr_list : expr COMMA expr_list    {  printf("expr_list : expr COMMA expr_list\
             | expr                  {  printf("expr_list : expr\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "expr_list");    newNode->nChilds=1; newNode->childs[0] = $1; $$=newNode;}
             ;   
 
-io : CIN GG ID                      {  printf("io : CIN GG ID\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "io");    newNode->nChilds=3; newNode->childs[0] = $1; newNode->childs[1] = $2; newNode->childs[2] = $3; $$=newNode;}
+io : CIN gg ID                      {  printf("io : CIN gg ID\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "io");    newNode->nChilds=3; newNode->childs[0] = $1; newNode->childs[1] = $2; newNode->childs[2] = $3; $$=newNode;}
     
-    | COUT LL expr                  {   printf("io : COUT LL expr\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "io");    newNode->nChilds=3; newNode->childs[0] = $1; newNode->childs[1] = $2; newNode->childs[2] = $3; $$=newNode;}     /*added new expression*/
+    | COUT ll expr                  {   printf("io : COUT ll expr\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "io");    newNode->nChilds=3; newNode->childs[0] = $1; newNode->childs[1] = $2; newNode->childs[2] = $3; $$=newNode;}     /*added new expression*/
     ;
+
+gg  : GG            {   printf("gg : GG\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "gg");    newNode->nChilds=1; newNode->childs[0] = $1; $$=newNode;}
+    | error              {  yyerror("stream direction missing ");  struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "gg");    newNode->nChilds=1; newNode->childs[0] = errorNode(); $$=newNode;}   
+    ;
+    
+
+ll  : LL            {   printf("ll : LL\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "ll");    newNode->nChilds=1; newNode->childs[0] = $1; $$=newNode;}
+    | error              {  yyerror("stream direction missing ");  struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "ll");    newNode->nChilds=1; newNode->childs[0] = errorNode(); $$=newNode;}   
+    ;
+
+rp  : RP            {   printf("rp : RP\n"); struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "rp");    newNode->nChilds=1; newNode->childs[0] = $1; $$=newNode;}
+    | error              {  yyerror("right parenthesis missing ");  struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "rp");    newNode->nChilds=1; newNode->childs[0] = errorNode(); $$=newNode;}   
+    ;
+
 
 colon :
         COLON           {  printf("colon : COLON\n");  struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "colon");    newNode->nChilds=1; newNode->childs[0] = $1; $$=newNode;}       
@@ -253,8 +275,19 @@ colon :
         ;
 semi :
         SEMI            {  printf("semi : SEMI\n");  struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "semi");    newNode->nChilds=1; newNode->childs[0] = $1; $$=newNode;}
-    /*    | error      {  yyerror("semicolon missing ");  struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "semi");    newNode->nChilds=1; newNode->childs[0] = errorNode(); $$=newNode;}  */
+        | error      {  yyerror("semicolon missing ");  struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "semi");    newNode->nChilds=1; newNode->childs[0] = errorNode(); $$=newNode;}  
         ;
+end :
+        END             {  printf("end : END\n");  struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "end");    newNode->nChilds=1; newNode->childs[0] = $1; $$=newNode;}
+        |   error       {  yyerror("end missing ");  struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "end");    newNode->nChilds=1; newNode->childs[0] = errorNode(); $$=newNode;}
+        ;
+        
+do :
+        DO             {  printf("do : DO\n");  struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "do");    newNode->nChilds=1; newNode->childs[0] = $1; $$=newNode;}
+        |   error       {  yyerror("do missing ");  struct node *newNode = (struct node *)malloc(sizeof(struct node)); newNode->isToken=0;  strcpy(newNode->name, "do");    newNode->nChilds=1; newNode->childs[0] = errorNode(); $$=newNode;}
+        ;
+   
+        
 /*
 program:
         program expr '\n'         { printf("%d\n", $2); }
@@ -351,9 +384,9 @@ printTree(struct node *root)
                 
             }
             else if(temp -> isToken)
-                fprintf(fp, "%s value: %s ( %d ) ", temp->name, temp->tokValue, temp->nChilds);
+                fprintf(fp, "(%s: \"%s\", \"%d\") ", temp->name, temp->tokValue, temp->nChilds);
             else
-                fprintf(fp, "%s ( %d ) ", temp->name, temp->nChilds);
+                fprintf(fp, "(%s, \"%d\") ", temp->name, temp->nChilds);
             next_nodes += temp->nChilds;
             for(i=0; i<temp->nChilds; i++)
             {
